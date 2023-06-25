@@ -12,7 +12,7 @@ enum NetworkError: Error, CustomStringConvertible {
     }
 }
 
-@NetworkRequest()
+@NetworkRequest
 struct NetworkResponse: Codable {
     let id: String
 }
