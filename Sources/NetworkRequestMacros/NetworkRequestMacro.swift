@@ -22,7 +22,7 @@ public struct NetworkRequestMacro: PeerMacro {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
                 message: SimpleDiagnosticMessage(
-                    message: "Replace \(declaration.self.kind) with struct",
+                    message: "Replace type declaration with struct",
                     diagnosticID: messageID,
                     severity: .error
                 )
@@ -40,7 +40,7 @@ public struct NetworkRequestMacro: PeerMacro {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
                 message: SimpleDiagnosticMessage(
-                    message: "Struct does not conform to Codable",
+                    message: "Type \(structDecl.identifier.text) does not conform to Codable",
                     diagnosticID: messageID,
                     severity: .error
                 )
@@ -54,14 +54,14 @@ public struct NetworkRequestMacro: PeerMacro {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
                 message: SimpleDiagnosticMessage(
-                    message: "Struct does not conform to Codable",
+                    message: "Type \(structDecl.identifier.text) does not conform to Codable",
                     diagnosticID: messageID,
                     severity: .error
                 ),
                 fixIts: [
                     FixIt(
                         message: SimpleDiagnosticMessage(
-                            message: "Add Codable conformance",
+                            message: "Add Codable conformance to type \(structDecl.identifier.text)",
                             diagnosticID: messageID,
                             severity: .error
                         ),
