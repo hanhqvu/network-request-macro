@@ -2,6 +2,7 @@ import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
 import NetworkRequestMacros
+import SwiftDiagnostics
 
 let testMacros: [String: Macro.Type] = [
     "NetworkRequest": NetworkRequestMacro.self,
@@ -49,7 +50,7 @@ final class NetworkRequestTests: XCTestCase {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Declaration need to be a struct", line: 1, column: 1)
+                DiagnosticSpec(message: "Replace enumDecl with struct", line: 1, column: 1),
             ],
             macros: testMacros
         )
@@ -68,7 +69,7 @@ final class NetworkRequestTests: XCTestCase {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Struct has no conformance", line: 1, column: 1)
+                DiagnosticSpec(message: "Struct does not conform to Codable", line: 1, column: 1)
             ],
             macros: testMacros
         )
@@ -77,17 +78,19 @@ final class NetworkRequestTests: XCTestCase {
         assertMacroExpansion(
             """
             @NetworkRequest
-            struct NetworkResponse: Error {
+            struct NetworkResponse: View {
                 let id: String
             }
             """,
             expandedSource: """
-            struct NetworkResponse: Error {
+            struct NetworkResponse: View {
                 let id: String
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Struct does not conform to Codable protocol", line: 1, column: 1)
+                DiagnosticSpec(message: "Struct does not conform to Codable", line: 1, column: 1, fixIts: [
+                    FixItSpec(message: "Add Codable conformance")
+                ])
             ],
             macros: testMacros
         )
