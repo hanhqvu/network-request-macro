@@ -2,47 +2,84 @@ import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import SwiftDiagnostics
 
-enum NetworkRequestMacroError: Error, CustomStringConvertible {
-    case notStruct
-    case noConformance
-    case notCodable
-    
-    var description: String {
-        switch self {
-        case .notStruct:
-            return "Declaration need to be a struct"
-        case .noConformance:
-            return "Struct has no conformance"
-        case .notCodable:
-            return "Struct does not conform to Codable protocol"
-        }
-    }
+struct SimpleDiagnosticMessage: DiagnosticMessage, Error {
+  let message: String
+  let diagnosticID: MessageID
+  let severity: DiagnosticSeverity
+}
+
+extension SimpleDiagnosticMessage: FixItMessage {
+  var fixItID: MessageID { diagnosticID }
 }
 
 public struct NetworkRequestMacro: PeerMacro {
     public static func expansion(of node: SwiftSyntax.AttributeSyntax, providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol, in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
-        guard let strucDecl = declaration.as(StructDeclSyntax.self) else {
-            throw NetworkRequestMacroError.notStruct
+        
+        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+            let messageID = MessageID(domain: "NetworkRequestMacro", id: "Not a struct")
+            let diagnostic = Diagnostic(
+                node: Syntax(declaration),
+                message: SimpleDiagnosticMessage(
+                    message: "Replace \(declaration.self.kind) with struct",
+                    diagnosticID: messageID,
+                    severity: .error
+                )
+            )
+            context.diagnose(diagnostic)
+            return []
         }
         
-        let inheritanceClause = strucDecl.inheritanceClause?.as(TypeInheritanceClauseSyntax.self)
+        let inheritanceClause = structDecl.inheritanceClause?.as(TypeInheritanceClauseSyntax.self)
         
         let inheritedTypeCollection = inheritanceClause?.inheritedTypeCollection.as(InheritedTypeListSyntax.self)
         
-        let conformance = inheritedTypeCollection?.first?.typeName
-        
-        let name = conformance?.description
-        
-        guard let name = name else {
-            throw NetworkRequestMacroError.noConformance
+        guard let type = inheritedTypeCollection?.first?.as(InheritedTypeSyntax.self) else {
+            let messageID = MessageID(domain: "NetworkRequestMacro", id: "Not Codable conformance")
+            let diagnostic = Diagnostic(
+                node: Syntax(declaration),
+                message: SimpleDiagnosticMessage(
+                    message: "Struct does not conform to Codable",
+                    diagnosticID: messageID,
+                    severity: .error
+                )
+            )
+            context.diagnose(diagnostic)
+            return []
         }
         
-        if (name != "Codable ") {
-            throw NetworkRequestMacroError.notCodable
+        if (type.typeName.description != "Codable ") {
+            let messageID = MessageID(domain: "NetworkRequestMacro", id: "Not Codable conformance")
+            let diagnostic = Diagnostic(
+                node: Syntax(declaration),
+                message: SimpleDiagnosticMessage(
+                    message: "Struct does not conform to Codable",
+                    diagnosticID: messageID,
+                    severity: .error
+                ),
+                fixIts: [
+                    FixIt(
+                        message: SimpleDiagnosticMessage(
+                            message: "Add Codable conformance",
+                            diagnosticID: messageID,
+                            severity: .error
+                        ),
+                        changes: [
+                            FixIt.Change.replace(
+                                oldNode: Syntax(type),
+                                newNode: Syntax(InheritedTypeSyntax(typeName: TypeSyntax(stringLiteral: "Codable")))
+                            )
+                        ]
+                    ),
+                ]
+            )
+            context.diagnose(diagnostic)
+            return []
         }
+
         
-        let structIdentifier = strucDecl.identifier
+        let structIdentifier = structDecl.identifier
         
         return [
             """
