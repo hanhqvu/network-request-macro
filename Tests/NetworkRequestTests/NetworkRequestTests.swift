@@ -50,7 +50,7 @@ final class NetworkRequestTests: XCTestCase {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Replace enumDecl with struct", line: 1, column: 1),
+                DiagnosticSpec(message: "Replace type declaration with struct", line: 1, column: 1),
             ],
             macros: testMacros
         )
@@ -69,7 +69,7 @@ final class NetworkRequestTests: XCTestCase {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Struct does not conform to Codable", line: 1, column: 1)
+                DiagnosticSpec(message: "Type NetworkResponse does not conform to Codable", line: 1, column: 1)
             ],
             macros: testMacros
         )
@@ -88,7 +88,7 @@ final class NetworkRequestTests: XCTestCase {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Struct does not conform to Codable", line: 1, column: 1, fixIts: [
+                DiagnosticSpec(message: "Type NetworkResponse does not conform to Codable", line: 1, column: 1, fixIts: [
                     FixItSpec(message: "Add Codable conformance")
                 ])
             ],
